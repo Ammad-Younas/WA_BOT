@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 import secrets
 import time
+from pathlib import Path
 from typing import Optional
 
 from config.configure_bot import TMP_DIR
@@ -368,8 +369,10 @@ def _do_download(user: str, url: str, mode: str) -> dict:
         path = media_tools.download_media_url(url, mode)
     except (RuntimeError, ValueError) as e:
         return {"text": f"{e}"}
+    except Exception as e:
+        return {"text": f"Download failed ({type(e).__name__}): {e}"}
     mtype = "video" if mode == "video" else "audio"
-    name = path.rsplit("\\", 1)[-1]
+    name = Path(path).name
     label = "Video" if mode == "video" else "MP3"
     return {"media_path": path, "media_type": mtype,
             "caption": f"{label} ready", "filename": name if mode == "audio" else None}

@@ -6,6 +6,7 @@ sender thread in main.py so ordering to a recipient is guaranteed.
 """
 import time
 import threading
+from pathlib import Path
 from typing import Optional
 
 import requests
@@ -158,7 +159,7 @@ def upload_media(file_path: str, mime_type: str) -> Optional[str]:
         resp = _call(
             "POST", "/media", MEDIA_LIMITER, timeout=MEDIA_TIMEOUT,
             data={"messaging_product": "whatsapp", "type": mime_type},
-            files={"file": (file_path.rsplit("\\", 1)[-1], fh, mime_type)},
+            files={"file": (Path(file_path).name, fh, mime_type)},
         )
     if resp is None:
         return None
