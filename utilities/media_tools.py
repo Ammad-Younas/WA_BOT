@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from config.configure_bot import (DOWNLOADS_DIR, FFMPEG, FFMPEG_DIR, FFPROBE,
-                                  TMP_DIR, YOUTUBE_COOKIES, YOUTUBE_OAUTH2, YOUTUBE_DYNAMIC_COOKIES, YTDLP)
+                                  TMP_DIR, YOUTUBE_COOKIES, YTDLP)
 
 CREATE_NO_WINDOW = 0x08000000
 PROC_KW = {"creationflags": CREATE_NO_WINDOW} if __import__("os").name == "nt" else {}
@@ -67,15 +67,6 @@ def download_media_url(url: str, mode: str = "video") -> str:
     ]
     if YOUTUBE_COOKIES is not None and YOUTUBE_COOKIES.exists():
         base += ["--cookies", str(YOUTUBE_COOKIES)]
-    elif YOUTUBE_DYNAMIC_COOKIES:
-        from utilities.dynamic_cookies import fetch_youtube_token
-        token_data = fetch_youtube_token()
-        if token_data:
-            po = token_data.get("po_token", "")
-            vis = token_data.get("visitor_data", "")
-            base += ["--extractor-args", f"youtube:player_client=web,default;po_token=web+{po};visitor_data={vis}"]
-    elif YOUTUBE_OAUTH2:
-        base += ["--username", "oauth2", "--password", ""]
     if mode == "audio":
         base += ["-x", "--audio-format", "mp3", "--audio-quality", "5",
                  "-o", out_tpl]

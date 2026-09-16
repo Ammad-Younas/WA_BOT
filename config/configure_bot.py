@@ -51,13 +51,11 @@ BINARIES_STATE: Path = BIN_DIR / "state.json"
 # Optional YouTube cookies file (exported from a browser) for stubborn bot checks.
 # Point at it with the MADI_YOUTUBE_COOKIES env var (relative to the repo root).
 _cookies_env = os.environ.get("MADI_YOUTUBE_COOKIES", "").strip()
-YOUTUBE_COOKIES: Optional[Path] = (BASE_DIR / _cookies_env).resolve() if _cookies_env else None
-
-_oauth2_env = os.environ.get("MADI_YOUTUBE_OAUTH2", "false").strip().lower()
-YOUTUBE_OAUTH2: bool = _oauth2_env in ("true", "1", "yes")
-
-_dynamic_cookies_env = os.environ.get("MADI_YOUTUBE_DYNAMIC_COOKIES", "false").strip().lower()
-YOUTUBE_DYNAMIC_COOKIES: bool = _dynamic_cookies_env in ("true", "1", "yes")
+if _cookies_env:
+    YOUTUBE_COOKIES: Optional[Path] = (BASE_DIR / _cookies_env).resolve()
+else:
+    _default_cookies = BASE_DIR / "data" / "cookies" / "cookies.txt"
+    YOUTUBE_COOKIES: Optional[Path] = _default_cookies if _default_cookies.exists() else None
 
 # Background binary updater (see utilities.bootstrap)
 BIN_UPDATE_INTERVAL_HOURS = int(os.environ.get("MADI_BIN_UPDATE_HOURS", "24"))
