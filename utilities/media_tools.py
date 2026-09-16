@@ -68,10 +68,12 @@ def download_media_url(url: str, mode: str = "video") -> str:
     if YOUTUBE_COOKIES is not None and YOUTUBE_COOKIES.exists():
         base += ["--cookies", str(YOUTUBE_COOKIES)]
     elif YOUTUBE_DYNAMIC_COOKIES:
-        from utilities.dynamic_cookies import fetch_youtube_cookies
-        dyn_cookie_path = fetch_youtube_cookies()
-        if dyn_cookie_path:
-            base += ["--cookies", str(dyn_cookie_path)]
+        from utilities.dynamic_cookies import fetch_youtube_token
+        token_data = fetch_youtube_token()
+        if token_data:
+            po = token_data.get("po_token", "")
+            vis = token_data.get("visitor_data", "")
+            base += ["--extractor-args", f"youtube:player_client=web,default;po_token=web+{po};visitor_data={vis}"]
     elif YOUTUBE_OAUTH2:
         base += ["--username", "oauth2", "--password", ""]
     if mode == "audio":
