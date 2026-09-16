@@ -22,5 +22,5 @@ Thumbs.db
 binaries/
 
 # runtime data (offsets, notes, reminders, downloads, transcode temp files)
-data/
+
 *.log
