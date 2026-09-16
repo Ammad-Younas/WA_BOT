@@ -78,7 +78,7 @@ def _specs() -> list[dict]:
             "tools": [
                 {"key": "ffmpeg", "local": FFMPEG},
                 {"key": "ffprobe", "local": FFPROBE},
-                {"key": "ffplay", "local": FFPLAY},
+                {"key": "ffplay", "local": FFPLAY, "optional": True},
             ],
         })
     elif _PLATFORM == "linux":
@@ -91,7 +91,7 @@ def _specs() -> list[dict]:
             "tools": [
                 {"key": "ffmpeg", "local": FFMPEG},
                 {"key": "ffprobe", "local": FFPROBE},
-                {"key": "ffplay", "local": FFPLAY},
+                {"key": "ffplay", "local": FFPLAY, "optional": True},
             ],
         })
     elif _PLATFORM == "darwin":
@@ -201,20 +201,29 @@ def _install_file(tool: dict, src: Path) -> None:
 
 
 def _install_archive(group: dict, archive: Path) -> None:
-    """Pull the needed members out of a zip/tar.xz and swap them in atomically."""
+    """Pull the needed members out of a zip/tar.xz and swap them in atomically.
+
+    Optional tools (e.g. ffplay on Linux/macOS) are skipped when the build
+    does not ship them; a missing required tool still aborts the install.
+    """
     staging = Path(tempfile.mkdtemp(prefix="bininst_", dir=str(BIN_DIR)))
+    committed = []
     try:
         for tool in group["tools"]:
             want = tool["local"].name  # e.g. ffmpeg / ffmpeg.exe
             member = _find_member(group["fmt"], archive, want)
             if member is None:
+                if tool.get("optional"):
+                    log(f"{want} not shipped in this build — skipping")
+                    continue
                 raise RuntimeError(f"{want} not found inside {archive.name}")
             target = staging / want
             _extract_member(group["fmt"], archive, member, target)
             if _PLATFORM in ("linux", "darwin"):
                 os.chmod(target, 0o755)
+            committed.append(tool)
         # commit only after every member extracted successfully
-        for tool in group["tools"]:
+        for tool in committed:
             _safe_replace(staging / tool["local"].name, tool["local"])
     finally:
         shutil.rmtree(staging, ignore_errors=True)
@@ -292,8 +301,8 @@ def ensure_binaries() -> None:
         return
     groups = _specs()
     for group in groups:
-        missing = [t for t in group["tools"]
-                   if not t["local"].exists() or t["local"].stat().st_size == 0]
+        missing = [t for t in group["tools"] if not t.get("optional") and
+                   (not t["local"].exists() or t["local"].stat().st_size == 0)]
         if not missing:
             continue
         for t in missing:
