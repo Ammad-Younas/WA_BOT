@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from config.configure_bot import (DOWNLOADS_DIR, FFMPEG, FFMPEG_DIR, FFPROBE,
-                                  TMP_DIR, YOUTUBE_COOKIES, YTDLP)
+                                  TMP_DIR, YOUTUBE_COOKIES, YOUTUBE_OAUTH2, YTDLP)
 
 CREATE_NO_WINDOW = 0x08000000
 PROC_KW = {"creationflags": CREATE_NO_WINDOW} if __import__("os").name == "nt" else {}
@@ -46,7 +46,7 @@ def _find_output(stem: str) -> Optional[Path]:
 
 # --------------------------------------------------------------------------
 # yt-dlp downloads (YouTube, TikTok, Instagram, Facebook, Twitter, Reddit ...)
-# --------------------------------------------------------------------------
+
 
 def download_media_url(url: str, mode: str = "video") -> str:
     """Download a video/audio file from a supported URL.
@@ -67,6 +67,8 @@ def download_media_url(url: str, mode: str = "video") -> str:
     ]
     if YOUTUBE_COOKIES is not None and YOUTUBE_COOKIES.exists():
         base += ["--cookies", str(YOUTUBE_COOKIES)]
+    elif YOUTUBE_OAUTH2:
+        base += ["--username", "oauth2", "--password", ""]
     if mode == "audio":
         base += ["-x", "--audio-format", "mp3", "--audio-quality", "5",
                  "-o", out_tpl]

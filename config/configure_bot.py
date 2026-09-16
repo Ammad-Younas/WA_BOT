@@ -53,6 +53,9 @@ BINARIES_STATE: Path = BIN_DIR / "state.json"
 _cookies_env = os.environ.get("MADI_YOUTUBE_COOKIES", "").strip()
 YOUTUBE_COOKIES: Optional[Path] = (BASE_DIR / _cookies_env).resolve() if _cookies_env else None
 
+_oauth2_env = os.environ.get("MADI_YOUTUBE_OAUTH2", "false").strip().lower()
+YOUTUBE_OAUTH2: bool = _oauth2_env in ("true", "1", "yes")
+
 # Background binary updater (see utilities.bootstrap)
 BIN_UPDATE_INTERVAL_HOURS = int(os.environ.get("MADI_BIN_UPDATE_HOURS", "24"))
 BIN_UPDATE_FIRST_DELAY_MINUTES = int(os.environ.get("MADI_BIN_UPDATE_FIRST_MIN", "5"))
