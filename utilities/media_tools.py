@@ -4,6 +4,7 @@ downloads, audio extraction, transcoding, stickers, and file probing.
 """
 from __future__ import annotations
 
+import os
 import secrets
 import shutil
 import subprocess
@@ -11,18 +12,23 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from config.configure_bot import (DOWNLOADS_DIR, FFMPEG, FFMPEG_DIR, FFPROBE,
-                                  TMP_DIR, YOUTUBE_COOKIES, YTDLP)
+from config.configure_bot import (DENO, DOWNLOADS_DIR, FFMPEG, FFMPEG_DIR,
+                                  FFPROBE, TMP_DIR, YOUTUBE_COOKIES, YTDLP)
 
 CREATE_NO_WINDOW = 0x08000000
-PROC_KW = {"creationflags": CREATE_NO_WINDOW} if __import__("os").name == "nt" else {}
+PROC_KW = {"creationflags": CREATE_NO_WINDOW} if os.name == "nt" else {}
 
 MAX_FILESIZE = "15M"  # keep comfortably under the 16 MB WhatsApp limit
 
 
 def _run(args: list, timeout: int = 300) -> subprocess.CompletedProcess:
+    # Make the managed Deno binary discoverable so modern yt-dlp can solve
+    # YouTube's JS challenges (signature/n).
+    env = os.environ.copy()
+    deno_dir = str(DENO.parent)
+    env["PATH"] = deno_dir + os.pathsep + env.get("PATH", "")
     return subprocess.run(args, capture_output=True, text=True,
-                          timeout=timeout, **PROC_KW)
+                          timeout=timeout, env=env, **PROC_KW)
 
 
 def _err_tail(err: str) -> str:

@@ -33,7 +33,8 @@ import requests
 
 from config.configure_bot import (BIN_DIR, BIN_UPDATE_FIRST_DELAY_MINUTES,
                                   BIN_UPDATE_INTERVAL_HOURS, BINARIES_STATE,
-                                  FFMPEG, FFMPEG_DIR, FFPROBE, FFPLAY, YTDLP)
+                                  DENO, FFMPEG, FFMPEG_DIR, FFPROBE, FFPLAY,
+                                  YTDLP)
 
 _PLATFORM = platform.system().lower()  # "windows" | "darwin" | "linux"
 _SPECS: Optional[list] = None
@@ -68,6 +69,19 @@ def _specs() -> list[dict]:
         "fmt": "file",
         "tools": [{"key": "ytdlp", "local": YTDLP}],
     }]
+
+    _deno_arch = "aarch64" if platform.machine().lower() in ("aarch64", "arm64") else "x86_64"
+    deno_asset = {
+        "windows": f"deno-{_deno_arch}-pc-windows-msvc.zip",
+        "linux": f"deno-{_deno_arch}-unknown-linux-gnu.zip",
+        "darwin": f"deno-{_deno_arch}-apple-darwin.zip",
+    }[_PLATFORM]
+    groups.append({
+        "id": "deno",
+        "url": f"https://github.com/denoland/deno/releases/latest/download/{deno_asset}",
+        "fmt": "zip",
+        "tools": [{"key": "deno", "local": DENO}],
+    })
 
     if _PLATFORM == "windows":
         groups.append({

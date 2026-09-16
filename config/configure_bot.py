@@ -48,6 +48,10 @@ FFPLAY: Path = _tool("ffplay")
 YTDLP: Path = _tool("ytdlp")
 BINARIES_STATE: Path = BIN_DIR / "state.json"
 
+# Deno JS runtime — required by modern yt-dlp to solve YouTube's JS challenges
+# (signature/n challenge). Auto-downloaded by utilities.bootstrap.
+DENO: Path = BIN_DIR / "deno" / ("deno.exe" if os.name == "nt" else "deno")
+
 # Optional YouTube cookies file (exported from a browser) for stubborn bot checks.
 # Point at it with the MADI_YOUTUBE_COOKIES env var (relative to the repo root).
 _cookies_env = os.environ.get("MADI_YOUTUBE_COOKIES", "").strip()
