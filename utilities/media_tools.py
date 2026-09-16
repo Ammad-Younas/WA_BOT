@@ -11,7 +11,8 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from config.configure_bot import DOWNLOADS_DIR, FFMPEG, FFMPEG_DIR, FFPROBE, TMP_DIR, YTDLP
+from config.configure_bot import (DOWNLOADS_DIR, FFMPEG, FFMPEG_DIR, FFPROBE,
+                                  TMP_DIR, YOUTUBE_COOKIES, YTDLP)
 
 CREATE_NO_WINDOW = 0x08000000
 PROC_KW = {"creationflags": CREATE_NO_WINDOW} if __import__("os").name == "nt" else {}
@@ -64,6 +65,8 @@ def download_media_url(url: str, mode: str = "video") -> str:
         "--max-filesize", MAX_FILESIZE,
         "--ffmpeg-location", str(FFMPEG_DIR),
     ]
+    if YOUTUBE_COOKIES is not None and YOUTUBE_COOKIES.exists():
+        base += ["--cookies", str(YOUTUBE_COOKIES)]
     if mode == "audio":
         base += ["-x", "--audio-format", "mp3", "--audio-quality", "5",
                  "-o", out_tpl]
@@ -85,7 +88,15 @@ def download_media_url(url: str, mode: str = "video") -> str:
     base.append(url)
 
     cmd = base
-    for attempt in range(2):
+    # YouTube frequently blocks datacenter IPs with a bot check
+    # ("Sign in to confirm you're not a bot"). Rotate player clients and retry;
+    # recent yt-dlp builds can also solve the JS/PO challenge themselves.
+    fallbacks = [
+        "youtube:player_client=android,ios,tv",
+        "youtube:player_client=web_embedded,tv",
+        "youtube:player_client=default,-web",
+    ]
+    for retry_idx in range(len(fallbacks) + 1):
         try:
             proc = _run(cmd)
         except subprocess.TimeoutExpired:
@@ -100,20 +111,20 @@ def download_media_url(url: str, mode: str = "video") -> str:
             elif out.stat().st_size > 16 * 1024 * 1024:
                 raise RuntimeError("the audio file exceeds WhatsApp's 16 MB limit")
             return str(out)
-        # YouTube's `web` client now needs a JS runtime and can 403 without one.
-        # Fall back to the android/ios/tv clients (self-contained signatures).
-        err = proc.stderr or ""
-        if attempt == 0 and "youtube" in err and (
-            "JavaScript runtime" in err or "403" in err
-        ):
-            cmd = base[:-1] + [
-                "--extractor-args", "youtube:player_client=android,ios,tv",
-                url,
-            ]
+
+        err = (proc.stderr or "") + "\n" + (proc.stdout or "")
+        low = err.lower()
+        blocked = ("403" in err) or any(m in low for m in (
+            "sign in to confirm", "you're not a bot", "not a bot",
+            "javascript runtime", "request was detected", "bot check",
+            "prove you're not", "unable to extract",
+        ))
+        if blocked and retry_idx < len(fallbacks):
+            cmd = base[:-1] + ["--extractor-args", fallbacks[retry_idx], url]
             continue
         raise RuntimeError(
             "couldn't download that link.\n"
-            + ("Reason: " + _err_tail(proc.stderr) if proc.stderr.strip() else "Check the URL.")
+            + ("Reason: " + _err_tail(proc.stderr) if (proc.stderr or "").strip() else "Check the URL.")
         )
     raise RuntimeError("couldn't download that link. Reason: unknown yt-dlp failure")
 

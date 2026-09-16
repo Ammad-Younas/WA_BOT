@@ -6,6 +6,7 @@ utilities.bootstrap — nothing is shipped with the repo).
 """
 import os
 from pathlib import Path
+from typing import Optional
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = BASE_DIR / ".env"
@@ -46,6 +47,11 @@ FFPROBE: Path = _tool("ffprobe")
 FFPLAY: Path = _tool("ffplay")
 YTDLP: Path = _tool("ytdlp")
 BINARIES_STATE: Path = BIN_DIR / "state.json"
+
+# Optional YouTube cookies file (exported from a browser) for stubborn bot checks.
+# Point at it with the MADI_YOUTUBE_COOKIES env var (relative to the repo root).
+_cookies_env = os.environ.get("MADI_YOUTUBE_COOKIES", "").strip()
+YOUTUBE_COOKIES: Optional[Path] = (BASE_DIR / _cookies_env).resolve() if _cookies_env else None
 
 # Background binary updater (see utilities.bootstrap)
 BIN_UPDATE_INTERVAL_HOURS = int(os.environ.get("MADI_BIN_UPDATE_HOURS", "24"))
