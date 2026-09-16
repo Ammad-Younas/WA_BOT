@@ -102,7 +102,7 @@ def download_media_url(url: str, mode: str = "video") -> str:
             return str(out)
         # YouTube's `web` client now needs a JS runtime and can 403 without one.
         # Fall back to the android/ios/tv clients (self-contained signatures).
-        err = proc.stderr.decode("utf-8", "replace")
+        err = proc.stderr or ""
         if attempt == 0 and "youtube" in err and (
             "JavaScript runtime" in err or "403" in err
         ):
